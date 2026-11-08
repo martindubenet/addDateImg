@@ -1,4 +1,4 @@
-# Add Date to Image File Name — Automator Quick Action <img width="48px" src="https://static.wikia.nocookie.net/ipod/images/a/ab/Automator.png/revision/latest?cb=20160908152407" alt="Otto the Automator" />
+# Add Date to Image File Name —  macOS Automator Quick Action <img width="48px" src="https://static.wikia.nocookie.net/ipod/images/a/ab/Automator.png/revision/latest?cb=20160908152407" alt="Otto the Automator" />
 
 Renames the selected images **in place**, adding the date the photo was taken to their file name, straight from the Finder. No copy is made.
 
