@@ -4,48 +4,36 @@ Renames the selected images **in place**, adding the date the photo was taken to
 
 <img width="100%" src="img_addDateImg.avif" alt="Screenshot">
 
-> Part of `aiScripts/`. Steps shared by all the scripts (Python libraries, `~/aiScripts` symbolic link, Xcode Command Line Tools) are detailed in [`watermarkImg/README.md`](../watermarkImg/README.md#1-install-the-dependencies-once).
+> Related scripts: [`watermarkImg`](https://github.com/martindubenet/watermarkImg) and [`renameForServer`](https://github.com/martindubenet/renameForServer).
+>
+> Generic macOS setup (Python libraries for Automator, Xcode Command Line Tools, creating a Quick Action, permissions, notifications): see my [wiki › macOS Automator](https://github.com/martindubenet/wed-dev-design/wiki/app-%E2%80%A2-macOS-Automator).
 
 ## How it works
 
 - `add_date.py` — the Python script called by the Quick Action. It reads the dates and renames the files.
-- `AddDate.app` — a small native macOS app (source in `AddDateApp/`, built on your Mac with `build_app.sh`) that only shows the window and posts the end-of-task notification.
+- `AddDate.app` — a small native macOS app (source in `AddDateApp/`, built locally with `build_app.sh`) that only shows the window and posts the end-of-task notification.
 
 If `AddDate.app` is missing or fails, the script automatically falls back to a native list dialog with the same 4 combinations (see [Fallback](#fallback)).
 
-## 1. Requirements (once)
+## Requirements
 
-- Pillow and pillow-heif for `/opt/homebrew/bin/python3` (to read the EXIF date, including iPhone HEIC photos): `/opt/homebrew/bin/python3 -m pip install -U Pillow pillow-heif`
-- The `~/aiScripts` symbolic link (see the watermark README, step 2).
-- Xcode Command Line Tools, to build the app (`xcode-select -p` to check).
+- Pillow and pillow-heif, installed for the `python3` used by the Quick Action, to read the EXIF date (including iPhone HEIC photos).
+- Xcode Command Line Tools, to build the app.
 
-## 2. Build the app (once, and after any change to `AddDateApp/`)
+## Setup
 
-In your Terminal app:
+1. **Build the app** (once, and after any change to `AddDateApp/`), from this folder: `./build_app.sh` — it ends with `Built: …/AddDate.app` (git-ignored).
+2. **Create the Quick Action** in Automator with:
+   - **Workflow receives current** → `image files` in `Finder`
+   - **Run Shell Script** action, **Shell** → `/bin/zsh`, **Pass input** → `as arguments`, script (adjust the path to this folder):
 
-```bash
-~/aiScripts/addDateImg/build_app.sh
-```
+     ```bash
+     /opt/homebrew/bin/python3 "$HOME/aiScripts/addDateImg/add_date.py" "$@"
+     ```
 
-It ends with `Built: …/AddDate.app`.
+   - Saved as e.g. **Add Date to Image File Name**.
 
-## 3. Create the Quick Action in Automator
-
-1. Open **Automator**, **File > New**, choose `Quick Action`.
-2. At the top of the document, set:
-   - **Workflow receives current** → `image files`
-   - **in** → `Finder`
-   - **Image** (*optional*) → an icon of your choice
-3. Add the **Run Shell Script** action, with **Shell** → `/bin/zsh` and **Pass input** → `as arguments`.
-4. Replace the content of the script box with:
-
-   ```bash
-   /opt/homebrew/bin/python3 "$HOME/aiScripts/addDateImg/add_date.py" "$@"
-   ```
-
-5. **File > Save**, e.g. **Add Date to Image File Name**.
-
-## 4. Usage
+## Usage
 
 > ⚠ The selected files are renamed directly. Try it on copies first.
 
@@ -70,15 +58,14 @@ It ends with `Built: …/AddDate.app`.
 
 ## Fallback
 
-If the window ever becomes unstable, delete or rename `AddDate.app` in the Finder: the script then shows a native list dialog with the 4 combinations (before/after × with/without time). To force it for a test, in your Terminal app:
+If the window ever becomes unstable, delete or rename `AddDate.app`: the script then shows a native list dialog with the 4 combinations (before/after × with/without time). To force it for a test, from this folder:
 
 ```bash
-AI_FORCE_DIALOG=1 /opt/homebrew/bin/python3 ~/aiScripts/addDateImg/add_date.py ~/Desktop/a-photo.jpg
+AI_FORCE_DIALOG=1 /opt/homebrew/bin/python3 add_date.py ~/Desktop/a-photo.jpg
 ```
 
 ## Troubleshooting
 
 - **The list dialog shows up instead of the window** → `AddDate.app` is missing or failed: rebuild it. Running the script from the Terminal (command above, without `AI_FORCE_DIALOG=1`) prints the reason (`AddDate.app gave no answer…`).
-- **No notification at the end** → the first time, macOS asks whether the app may send notifications: click **Allow**. Check **System Settings › Notifications** and Focus modes. If notifications are refused, a dialog that closes itself after 3 seconds is shown instead.
-- **Permission alert "… wants access to control Finder"** → click **Allow** (dialogs are shown by the Finder so they get the focus).
+- **No notification at the end** → allow notifications for **Add date to image file** (the app name) the first time macOS asks. If macOS refuses them, a dialog that closes itself after 3 seconds is shown instead.
 - **Wrong date** → the camera clock was probably off: check the EXIF with `exiftool -a -G1 "photo.jpg"` (after `brew install exiftool`).
